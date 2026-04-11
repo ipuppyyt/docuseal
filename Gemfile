@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-ruby '4.0.1'
+ruby '~> 3.4'
 
 gem 'addressable'
 gem 'arabic-letter-connector', require: false

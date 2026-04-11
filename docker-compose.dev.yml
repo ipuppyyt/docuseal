@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./storage:/data/docuseal
+      - ./app:/app/app
+    environment:
+      - RAILS_ENV=production
+      - SECRET_KEY_BASE=localdevonlysecretnotforproduction
+      - RAILS_LOG_TO_STDOUT=true

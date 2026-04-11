@@ -1,4 +1,4 @@
-FROM ruby:4.0.1-alpine AS download
+FROM ruby:3.4-alpine AS download
 
 WORKDIR /fonts
 
@@ -13,15 +13,14 @@ RUN apk --no-cache add wget && \
     mkdir -p /pdfium-linux && \
     tar -xzf pdfium-linux.tgz -C /pdfium-linux
 
-FROM ruby:4.0.1-alpine AS webpack
+FROM ruby:3.4-alpine AS webpack
 
 ENV RAILS_ENV=production
 ENV NODE_ENV=production
 
 WORKDIR /app
 
-RUN apk add --no-cache nodejs yarn git build-base && \
-    gem install shakapacker
+RUN apk add --no-cache nodejs yarn git build-base
 
 COPY ./package.json ./yarn.lock ./
 
@@ -38,9 +37,9 @@ COPY ./tailwind.application.config.js ./tailwind.application.config.js
 COPY ./app/javascript ./app/javascript
 COPY ./app/views ./app/views
 
-RUN echo "gem 'shakapacker'" > Gemfile && ./bin/shakapacker
+RUN ./node_modules/.bin/webpack --config config/webpack/webpack.config.js
 
-FROM ruby:4.0.1-alpine AS app
+FROM ruby:3.4-alpine AS app
 
 ENV RAILS_ENV=production
 ENV BUNDLE_WITHOUT="development:test"
@@ -69,6 +68,7 @@ COPY --chown=docuseal:docuseal ./Gemfile ./Gemfile.lock ./
 RUN apk add --no-cache build-base git libpq-dev yaml-dev && bundle install && apk del --no-cache build-base git libpq-dev yaml-dev && rm -rf ~/.bundle /usr/local/bundle/cache && ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales,resources/unicode_data/properties}'] + Dir['/usr/local/bundle/gems/*/{test,tests,examples,sample,misc,doc,docs}'] + Dir['/usr/local/bundle/gems/*/ext/**/*.{c,h,o,S}']" | xargs rm -rf && ln -sf /usr/lib/libonnxruntime.so.1 $(ruby -e "print Dir[Gem::Specification.find_by_name('onnxruntime').gem_dir + '/vendor/*.so'].first")
 
 COPY --chown=docuseal:docuseal ./bin ./bin
+RUN apk add --no-cache dos2unix && dos2unix /app/bin/* && apk del dos2unix
 COPY --chown=docuseal:docuseal ./app ./app
 COPY --chown=docuseal:docuseal ./config ./config
 COPY --chown=docuseal:docuseal ./db/migrate ./db/migrate
