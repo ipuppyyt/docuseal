@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="field?.type && (isSelected || isNameFocus) && !isInMultiSelection"
-    class="absolute bg-white rounded-t border overflow-visible whitespace-nowrap flex z-10 field-area-controls"
+    class="absolute bg-base-100 rounded-t border overflow-visible whitespace-nowrap flex z-10 field-area-controls"
     style="top: -25px; height: 25px"
     @mousedown.stop
     @pointerdown.stop

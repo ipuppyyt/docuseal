@@ -136,7 +136,7 @@
     <img
       v-if="modelValue || computedPreviousValue"
       :src="attachmentsIndex[modelValue || computedPreviousValue].url"
-      class="mx-auto bg-white border border-base-300 rounded max-h-44"
+      class="mx-auto bg-base-100 border border-base-300 rounded max-h-44"
     >
     <FileDropzone
       v-if="format === 'upload' && !modelValue && !computedPreviousValue"
@@ -171,11 +171,11 @@
         v-show="!modelValue && !computedPreviousValue"
         ref="canvas"
         style="padding: 1px; 0"
-        class="bg-white border border-base-300 rounded-2xl w-full draw-canvas"
+        class="bg-base-100 border border-base-300 rounded-2xl w-full draw-canvas"
       />
       <div
         v-if="isShowQr"
-        class="top-0 bottom-0 right-0 left-0 absolute bg-white rounded-2xl m-0.5"
+        class="top-0 bottom-0 right-0 left-0 absolute bg-base-100 rounded-2xl m-0.5"
       />
       <div
         v-if="isShowQr"
@@ -192,7 +192,7 @@
         </div>
         <div class="flex items-center justify-center w-full h-full p-4">
           <div
-            class="bg-white p-4 rounded-xl h-full"
+            class="bg-base-100 p-4 rounded-xl h-full"
           >
             <canvas
               ref="qrCanvas"

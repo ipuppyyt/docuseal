@@ -22,7 +22,7 @@
           >
             <button
               v-if="item.conditions?.length"
-              class="btn border-gray-300 bg-white text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors p-0 document-control-button"
+              class="btn border-gray-300 bg-base-100 text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors p-0 document-control-button"
               @click.stop="isShowConditionsModal = true"
             >
               <IconRouteAltLeft
@@ -52,7 +52,7 @@
             >
               <label
                 tabindex="0"
-                class="btn border-gray-300 bg-white text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors document-control-button px-0"
+                class="btn border-gray-300 bg-base-100 text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors document-control-button px-0"
                 style="width: 24px; height: 24px"
                 @click.stop
               >
@@ -65,7 +65,7 @@
               <ul
                 v-if="renderDropdown"
                 tabindex="0"
-                class="mt-1.5 dropdown-content p-1 shadow-lg rounded-lg border border-neutral-200 z-50 bg-white"
+                class="mt-1.5 dropdown-content p-1 shadow-lg rounded-lg border border-neutral-200 z-50 bg-base-100"
                 style="min-width: 170px"
                 @click="closeDropdown"
               >
@@ -128,14 +128,14 @@
               class="flex flex-col space-y-1 opacity-0 group-hover:opacity-100"
             >
               <button
-                class="btn border-gray-300 bg-white text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors document-control-button"
+                class="btn border-gray-300 bg-base-100 text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors document-control-button"
                 style="width: 24px; height: 24px"
                 @click.stop="$emit('up', item)"
               >
                 &uarr;
               </button>
               <button
-                class="btn border-gray-300 bg-white text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors document-control-button"
+                class="btn border-gray-300 bg-base-100 text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors document-control-button"
                 style="width: 24px; height: 24px"
                 @click.stop="$emit('down', item)"
               >

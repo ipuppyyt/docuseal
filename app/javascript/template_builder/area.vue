@@ -25,7 +25,7 @@
       >
         <span
           v-if="index === 0 && editable && !isInMultiSelection"
-          class="h-2.5 w-2.5 rounded-full -bottom-1 border-gray-400 bg-white shadow-md border absolute cursor-ew-resize z-10"
+          class="h-2.5 w-2.5 rounded-full -bottom-1 border-gray-400 bg-base-100 shadow-md border absolute cursor-ew-resize z-10"
           style="left: -4px"
           @mousedown.stop="startResizeCell"
         />
@@ -210,7 +210,7 @@
     />
     <span
       v-if="field?.type && editable"
-      class="h-4 w-4 lg:h-2.5 lg:w-2.5 -right-1 rounded-full -bottom-1 border-gray-400 bg-white shadow-md border absolute cursor-nwse-resize"
+      class="h-4 w-4 lg:h-2.5 lg:w-2.5 -right-1 rounded-full -bottom-1 border-gray-400 bg-base-100 shadow-md border absolute cursor-nwse-resize"
       :class="{ 'z-30': isInMultiSelection }"
       @mousedown.stop="startResize"
       @touchstart="startTouchResize"

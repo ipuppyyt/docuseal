@@ -55,6 +55,8 @@ import OpenModal from './elements/open_modal'
 import BarChart from './elements/bar_chart'
 import FieldCondition from './elements/field_condition'
 
+import ThemeToggle from './elements/theme_toggle'
+
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
 TurboInstantClick.start()
@@ -146,6 +148,7 @@ safeRegisterElement('google-drive-file-picker', GoogleDriveFilePicker)
 safeRegisterElement('open-modal', OpenModal)
 safeRegisterElement('bar-chart', BarChart)
 safeRegisterElement('field-condition', FieldCondition)
+safeRegisterElement('theme-toggle', ThemeToggle)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {

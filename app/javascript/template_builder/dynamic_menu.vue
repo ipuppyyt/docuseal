@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="visible"
-    class="absolute z-10 flex items-center gap-0.5 px-1.5 py-1 bg-white border border-base-300 rounded-lg shadow select-none"
+    class="absolute z-10 flex items-center gap-0.5 px-1.5 py-1 bg-base-100 border border-base-300 rounded-lg shadow select-none"
     :style="{ top: (coords.top - 42) + 'px', left: coords.left + 'px', transform: 'translateX(-50%)' }"
     @mousedown.prevent
   >
