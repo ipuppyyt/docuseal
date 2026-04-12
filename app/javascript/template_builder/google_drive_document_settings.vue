@@ -12,7 +12,7 @@
     <ul
       tabindex="0"
       :style="{ backgroundColor }"
-      class="dropdown-content z-[1] shadow menu rounded-box"
+      class="dropdown-content bg-base-100 z-[1] shadow menu rounded-box"
     >
       <li>
         <a

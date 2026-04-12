@@ -46,7 +46,7 @@
           <ul
             tabindex="0"
             :style="{ backgroundColor }"
-            class="dropdown-content p-2 mt-2 shadow menu text-base mb-1 rounded-box text-right !text-base-content"
+            class="dropdown-content bg-base-100 p-2 mt-2 shadow menu text-base mb-1 rounded-box text-right !text-base-content"
           >
             <li>
               <button

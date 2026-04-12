@@ -55,7 +55,7 @@
       v-if="$slots.buttons || withTitle"
       id="title_container"
       class="flex justify-between py-1.5 items-center pr-4 top-0 z-10 title-container"
-      :class="{ sticky: withStickySubmitters || isBreakpointLg }"
+      :class="{ sticky: withStickySubmitters || isBreakpointLg, 'bg-base-100': !backgroundColor }"
       :style="{ backgroundColor }"
     >
       <div class="flex items-center space-x-3">
@@ -287,6 +287,7 @@
         />
         <div
           class="sticky bottom-0 py-2 space-y-2"
+          :class="{'bg-base-100': !backgroundColor}"
           :style="{ backgroundColor }"
         >
           <Upload
@@ -464,6 +465,7 @@
         <div
           v-if="showDrawField || drawField || drawCustomField"
           class="sticky inset-0 h-full z-20"
+          :class="{'bg-base-100': !backgroundColor}"
           :style="{ backgroundColor }"
         >
           <div class="bg-base-200 rounded-lg p-5 text-center space-y-4 draw-field-container">

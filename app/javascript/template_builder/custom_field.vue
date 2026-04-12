@@ -71,7 +71,7 @@
             <ul
               v-if="renderDropdown"
               tabindex="0"
-              class="mt-1.5 dropdown-content menu menu-xs p-2 shadow rounded-box w-52 z-10"
+              class="mt-1.5 dropdown-content bg-base-100 menu menu-xs p-2 shadow rounded-box w-52 z-10"
               :style="{ backgroundColor: dropdownBgColor }"
               draggable="true"
               @dragstart.prevent.stop
@@ -215,7 +215,7 @@ export default {
   },
   computed: {
     dropdownBgColor () {
-      return ['', null, 'transparent'].includes(this.backgroundColor) ? 'white' : this.backgroundColor
+      return ['', null, 'transparent'].includes(this.backgroundColor) ? '' : this.backgroundColor
     },
     modalContainerEl () {
       return this.$el.getRootNode().querySelector('#docuseal_modal_container')

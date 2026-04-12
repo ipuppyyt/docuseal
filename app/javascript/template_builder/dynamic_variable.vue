@@ -41,7 +41,7 @@
           <ul
             v-if="renderDropdown"
             tabindex="0"
-            class="mt-1.5 dropdown-content menu menu-xs p-2 shadow rounded-box w-52 z-10"
+            class="mt-1.5 dropdown-content bg-base-100 menu menu-xs p-2 shadow rounded-box w-52 z-10"
             :style="{ backgroundColor: dropdownBgColor }"
             @click="closeDropdown"
           >
@@ -293,7 +293,7 @@ export default {
       }
     },
     dropdownBgColor () {
-      return ['', null, 'transparent'].includes(this.backgroundColor) ? 'white' : this.backgroundColor
+      return ['', null, 'transparent'].includes(this.backgroundColor) ? '' : this.backgroundColor
     },
     schemaTypeToFormType () {
       return { string: 'text', number: 'number', boolean: 'checkbox', date: 'date' }
