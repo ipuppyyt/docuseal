@@ -256,14 +256,23 @@ module Submissions
           font_name = field.dig('preferences', 'font')
           font_variant = (field.dig('preferences', 'font_type').presence || 'none').to_sym
 
-          font_name = FONT_NAME unless font_name.in?(DEFAULT_FONTS)
+          # Try to get custom font path if it's a custom font UUID
+          custom_font_path = CustomFont.at_path(font_name, account) if font_name && !font_name.in?(DEFAULT_FONTS)
 
-          if font_variant != :none && font_name == FONT_NAME
-            font_name = FONT_VARIANS[font_variant] if FONT_VARIANS[font_variant]
-            font_variant = nil unless font_name.in?(DEFAULT_FONTS)
+          if custom_font_path
+            # Use the custom font file
+            font = pdf.fonts.add(custom_font_path)
+          else
+            # Use default fonts or built-in fonts
+            font_name = FONT_NAME unless font_name.in?(DEFAULT_FONTS)
+
+            if font_variant != :none && font_name == FONT_NAME
+              font_name = FONT_VARIANS[font_variant] if FONT_VARIANS[font_variant]
+              font_variant = nil unless font_name.in?(DEFAULT_FONTS)
+            end
+
+            font = pdf.fonts.add(font_name, variant: font_variant, custom_encoding: font_name.in?(DEFAULT_FONTS))
           end
-
-          font = pdf.fonts.add(font_name, variant: font_variant, custom_encoding: font_name.in?(DEFAULT_FONTS))
 
           value = submitter.values[field['uuid']]
           value = field['default_value'] if field['type'] == 'heading'

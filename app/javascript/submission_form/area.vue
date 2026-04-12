@@ -542,7 +542,22 @@ export default {
         }
       }
 
-      return { fontSize, lineHeight: `calc(${fontSize} * ${this.lineHeight})` }
+      const style = { fontSize, lineHeight: `calc(${fontSize} * ${this.lineHeight})` }
+
+      // Apply custom font if set
+      if (this.field?.preferences?.font) {
+        const fontUuid = this.field.preferences.font
+        // Check if it's a custom font (UUIDs are typically longer strings)
+        if (fontUuid.length > 20) {
+          style.fontFamily = `custom-font-${fontUuid}, sans-serif`
+        } else if (fontUuid === 'Courier') {
+          style.fontFamily = 'Courier, monospace'
+        } else if (fontUuid === 'Times') {
+          style.fontFamily = 'Times, serif'
+        }
+      }
+
+      return style
     },
     fontSizePx () {
       return parseInt(this.field?.preferences?.font_size || 11) * this.fontScale

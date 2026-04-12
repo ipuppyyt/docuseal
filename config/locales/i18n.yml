@@ -250,6 +250,12 @@ en: &en
   upload_certificate: Upload Certificate
   name: Name
   file: File
+  custom_fonts: Custom Fonts
+  upload_font: Upload Font
+  font_name: Font Name
+  font_file: Font File
+  no_custom_fonts: No custom fonts uploaded yet
+  delete_font: Delete Font
   use_a_valid_der_p12_or_pfx_file: Use a valid .der, .p12 or .pfx file.
   submit: Submit
   submitting: Submitting

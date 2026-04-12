@@ -8,6 +8,89 @@
 <% with_submitter_timezone = configs.find { |e| e.key == AccountConfig::WITH_SUBMITTER_TIMEZONE_KEY }&.value == true %>
 <% with_timestamp_seconds = configs.find { |e| e.key == AccountConfig::WITH_TIMESTAMP_SECONDS_KEY }&.value == true %>
 <% with_signature_id_reason = configs.find { |e| e.key == AccountConfig::WITH_SIGNATURE_ID_REASON_KEY }&.value != false %>
+<% custom_fonts = @submission.account.custom_fonts.pluck(:uuid, :id).to_h %>
+<style id="custom-fonts-style">
+  <% @submission.account.custom_fonts.each do |font| %>
+    <% if font.font_file.attached? %>
+      <% filename = font.font_file.blob.filename.to_s %>
+      <% ext = filename.split('.').pop.downcase %>
+      <% download_url = "/custom_fonts/#{font.uuid}/download" %>
+      <% if ['ttf', 'otf'].include?(ext) %>
+        @font-face {
+          font-family: 'custom-font-<%= font.uuid %>';
+          src: url('<%= download_url %>') format('truetype');
+        }
+      <% elsif ext == 'woff' %>
+        @font-face {
+          font-family: 'custom-font-<%= font.uuid %>';
+          src: url('<%= download_url %>') format('woff');
+        }
+      <% elsif ext == 'woff2' %>
+        @font-face {
+          font-family: 'custom-font-<%= font.uuid %>';
+          src: url('<%= download_url %>') format('woff2');
+        }
+      <% elsif ext == 'pfb' %>
+        @font-face {
+          font-family: 'custom-font-<%= font.uuid %>';
+          src: url('<%= download_url %>') format('opentype');
+        }
+      <% else %>
+        @font-face {
+          font-family: 'custom-font-<%= font.uuid %>';
+          src: url('<%= download_url %>');
+        }
+      <% end %>
+    <% end %>
+  <% end %>
+</style>
+<script>
+  // Apply custom fonts to form inputs based on field preferences
+  (function() {
+    const customFonts = new Map();
+    <% @submission.account.custom_fonts.each do |font| %>
+      customFonts.set('<%= font.uuid %>', 'custom-font-<%= font.uuid %>');
+    <% end %>
+    
+    function applyFontToFields() {
+      const fields = document.querySelectorAll('[data-field-uuid]');
+      fields.forEach(field => {
+        const fieldUuid = field.getAttribute('data-field-uuid');
+        const fieldPreferences = field.getAttribute('data-field-preferences');
+        
+        if (fieldPreferences) {
+          try {
+            const prefs = JSON.parse(fieldPreferences);
+            if (prefs.font && customFonts.has(prefs.font)) {
+              const fontFamily = customFonts.get(prefs.font);
+              const inputs = field.querySelectorAll('input, textarea, select, div[contenteditable]');
+              inputs.forEach(input => {
+                input.style.fontFamily = `${fontFamily}, sans-serif`;
+              });
+              // Also apply to the field itself
+              field.style.fontFamily = `${fontFamily}, sans-serif`;
+            }
+          } catch (e) {
+            console.error('Error parsing field preferences:', e);
+          }
+        }
+      });
+    }
+    
+    // Apply fonts when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyFontToFields);
+    } else {
+      applyFontToFields();
+    }
+    
+    // Also apply when dynamic content is loaded
+    if (window.MutationObserver) {
+      const observer = new MutationObserver(applyFontToFields);
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  })();
+</script>
 <div style="max-width: 1600px" class="mx-auto pl-4">
   <div class="flex justify-between py-1.5 items-center pr-4 sticky top-0 md:relative z-10 bg-base-100">
     <a href="<%= signed_in? && @submission.account_id == current_account&.id && @submission.template ? template_path(@submission.template) : '/' %>" class="flex items-center space-x-3 py-1">

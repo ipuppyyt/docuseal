@@ -26,6 +26,11 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     resource :user, only: %i[show]
     resources :attachments, only: %i[create]
+    resources :custom_fonts, only: %i[index create destroy], param: :uuid do
+      member do
+        get :download
+      end
+    end
     resources :submitter_email_clicks, only: %i[create]
     resources :submitter_form_views, only: %i[create]
     resources :submitters, only: %i[index show update]
@@ -54,6 +59,11 @@ Rails.application.routes.draw do
   resource :mfa_setup, only: %i[show new edit create destroy], controller: 'mfa_setup'
   resources :account_configs, only: %i[create destroy]
   resources :account_custom_fields, only: %i[create]
+  resources :custom_fonts, only: %i[index create destroy], param: :uuid do
+    member do
+      get :download
+    end
+  end
   resources :user_configs, only: %i[create]
   resources :encrypted_user_configs, only: %i[destroy]
   resources :timestamp_server, only: %i[create] unless Docuseal.multitenant?

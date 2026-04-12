@@ -11,6 +11,90 @@
       <%= javascript_pack_tag 'form', defer: true %>
     <% end %>
     <%= stylesheet_pack_tag 'form', media: 'all' %>
+    <% if @submitter %>
+      <style id="custom-fonts-style">
+        <% @submitter.account.custom_fonts.each do |font| %>
+          <% if font.font_file.attached? %>
+            <% filename = font.font_file.blob.filename.to_s %>
+            <% ext = filename.split('.').pop.downcase %>
+            <% download_url = "/custom_fonts/#{font.uuid}/download" %>
+            <% if ['ttf', 'otf'].include?(ext) %>
+              @font-face {
+                font-family: 'custom-font-<%= font.uuid %>';
+                src: url('<%= download_url %>') format('truetype');
+              }
+            <% elsif ext == 'woff' %>
+              @font-face {
+                font-family: 'custom-font-<%= font.uuid %>';
+                src: url('<%= download_url %>') format('woff');
+              }
+            <% elsif ext == 'woff2' %>
+              @font-face {
+                font-family: 'custom-font-<%= font.uuid %>';
+                src: url('<%= download_url %>') format('woff2');
+              }
+            <% elsif ext == 'pfb' %>
+              @font-face {
+                font-family: 'custom-font-<%= font.uuid %>';
+                src: url('<%= download_url %>') format('opentype');
+              }
+            <% else %>
+              @font-face {
+                font-family: 'custom-font-<%= font.uuid %>';
+                src: url('<%= download_url %>');
+              }
+            <% end %>
+          <% end %>
+        <% end %>
+      </style>
+      <script>
+        // Apply custom fonts to form inputs based on field preferences
+        (function() {
+          const customFonts = new Map();
+          <% @submitter.account.custom_fonts.each do |font| %>
+            customFonts.set('<%= font.uuid %>', 'custom-font-<%= font.uuid %>');
+          <% end %>
+          
+          function applyFontToFields() {
+            const fields = document.querySelectorAll('[data-field-uuid]');
+            fields.forEach(field => {
+              const fieldUuid = field.getAttribute('data-field-uuid');
+              const fieldPreferences = field.getAttribute('data-field-preferences');
+              
+              if (fieldPreferences) {
+                try {
+                  const prefs = JSON.parse(fieldPreferences);
+                  if (prefs.font && customFonts.has(prefs.font)) {
+                    const fontFamily = customFonts.get(prefs.font);
+                    const inputs = field.querySelectorAll('input, textarea, select, div[contenteditable]');
+                    inputs.forEach(input => {
+                      input.style.fontFamily = `${fontFamily}, sans-serif`;
+                    });
+                    // Also apply to the field itself
+                    field.style.fontFamily = `${fontFamily}, sans-serif`;
+                  }
+                } catch (e) {
+                  console.error('Error parsing field preferences:', e);
+                }
+              }
+            });
+          }
+          
+          // Apply fonts when DOM is ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyFontToFields);
+          } else {
+            applyFontToFields();
+          }
+          
+          // Also apply when dynamic content is loaded
+          if (window.MutationObserver) {
+            const observer = new MutationObserver(applyFontToFields);
+            observer.observe(document.body, { childList: true, subtree: true });
+          }
+        })();
+      </script>
+    <% end %>
   </head>
   <body>
     <%= yield %>
