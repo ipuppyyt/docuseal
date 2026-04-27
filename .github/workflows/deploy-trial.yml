@@ -1,0 +1,110 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches:
+      - master        # triggers on every push to main
+  workflow_dispatch: # allows manual trigger from GitHub UI
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}   # e.g. yourusername/docuseal
+
+jobs:
+  build-and-push:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      contents: read
+      packages: write   # needed to push to ghcr.io
+
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}   # built-in, no setup needed
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-           # e.g. sha-a1b2c3d  (unique per commit)
+            type=raw,value=latest          # always update :latest tag
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha        # GitHub Actions cache — makes rebuilds fast
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build-and-push   # only runs after image is pushed successfully
+    timeout-minutes: 10
+
+    steps:
+      - name: SSH into VPS and deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.TRIAL_VPS_HOST }}
+          username: ${{ secrets.TRIAL_VPS_USER }}
+          password: ${{ secrets.TRIAL_VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}     # defaults to 22 if not set
+          source: "compose.yml"
+          target: "~/docuseal"
+          script: |
+            set -e    # exit immediately if any command fails
+
+            # Log in to GHCR from the VPS
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+              -u ${{ github.actor }} --password-stdin
+
+            # Pull the new image
+            docker pull ghcr.io/${{ github.repository }}:latest
+
+            # Ensure directory exists and cd into it
+            mkdir -p ~/docuseal
+            cd ~/docuseal
+
+            # Create .env file from GitHub secret
+            if [ ! -f .env ]; then
+              echo "SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}" > .env
+            fi
+
+            # Determine which compose file to use
+            if [ -f docker-compose.yml ]; then
+              COMPOSE_FILE=docker-compose.yml
+            elif [ -f compose.yml ]; then
+              COMPOSE_FILE=compose.yml
+            else
+              # fallback to repo file
+              cp compose.yml docker-compose.yml
+              COMPOSE_FILE=docker-compose.yml
+            fi
+
+            # Restart the container with the new image
+            docker compose -f $COMPOSE_FILE up -d --pull always
+
+            # Remove dangling old images to free disk space
+            docker image prune -f
+
+            echo "Deployment complete"
