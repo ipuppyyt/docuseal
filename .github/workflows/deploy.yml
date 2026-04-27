@@ -1,9 +1,9 @@
 name: Build & Deploy
 
 on:
-  push:
-    branches:
-      - master        # triggers on every push to main
+  # push:
+  #   branches:
+  #     - master        # triggers on every push to main
   workflow_dispatch: # allows manual trigger from GitHub UI
 
 env:
