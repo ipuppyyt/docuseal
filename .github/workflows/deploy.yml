@@ -7,21 +7,14 @@ on:
   workflow_dispatch:
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: docuseal
+  DEPLOY_DIR: /root/docuseal
 
 jobs:
-  build-and-push:
-    name: Build & Push to GHCR
+  deploy:
+    name: Build image and deploy to server
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
-    permissions:
-      contents: read
-      packages: write
-
-    outputs:
-      image: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout code
@@ -30,93 +23,64 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract image metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix=sha-
-            type=raw,value=latest
-
-      - name: Build and push image
+      - name: Build image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          load: true
+          tags: ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy-coolify:
-    name: Deploy to Coolify
-    runs-on: ubuntu-latest
-    needs: build-and-push
-
-    steps:
-      - name: Trigger Coolify Deployment
+      - name: Configure SSH
         run: |
-          curl --fail \
-            -X POST \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            "${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq sshpass
+          install -m 700 -d ~/.ssh
+          ssh-keyscan -p "${{ secrets.VPS_PORT || 22 }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<CFG
+          Host vps
+            HostName ${{ secrets.VPS_HOST }}
+            User ${{ secrets.VPS_USER }}
+            Port ${{ secrets.VPS_PORT || 22 }}
+            PreferredAuthentications password
+            PubkeyAuthentication no
+          CFG
 
-  # deploy:
-  #   name: Deploy to VPS
-  #   runs-on: ubuntu-latest
-  #   needs: build-and-push
-  #   timeout-minutes: 10
+      - name: Copy compose and Caddy config
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -e ssh vps "mkdir -p ${{ env.DEPLOY_DIR }}"
+          sshpass -e scp compose.yml Caddyfile vps:${{ env.DEPLOY_DIR }}/
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+      - name: Stream image to server
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          docker save ${{ env.IMAGE_NAME }}:sha-${{ github.sha }} | gzip | sshpass -e ssh vps 'gunzip | docker load'
 
-  #     - name: Connect to Tailscale
-  #       uses: tailscale/github-action@v3
-  #       with:
-  #         authkey: ${{ secrets.TS_AUTHKEY }}
-  #         tags: tag:github-actions
-
-  #     - name: Copy compose file to VPS
-  #       uses: appleboy/scp-action@v0.1.7
-  #       with:
-  #         host: ${{ secrets.VPS_HOST }}
-  #         username: ${{ secrets.VPS_USER }}
-  #         key: ${{ secrets.VPS_SSH_KEY }}
-  #         port: ${{ secrets.VPS_PORT }}
-  #         source: "compose.yml"
-  #         target: "~/docuseal"
-
-  #     - name: SSH into VPS and deploy
-  #       uses: appleboy/ssh-action@v1
-  #       with:
-  #         host: ${{ secrets.VPS_HOST }}
-  #         username: ${{ secrets.VPS_USER }}
-  #         key: ${{ secrets.VPS_SSH_KEY }}
-  #         port: ${{ secrets.VPS_PORT }}
-  #         script: |
-  #           set -e
-
-  #           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
-  #             -u ${{ github.actor }} --password-stdin
-
-  #           docker pull ghcr.io/${{ github.repository }}:latest
-
-  #           mkdir -p ~/docuseal
-  #           cd ~/docuseal
-
-  #           if [ ! -f .env ]; then
-  #             echo "SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}" > .env
-  #           fi
-
-  #           docker compose -f compose.yml up -d --pull always
-  #           docker image prune -f
-
-  #           echo "Deployment complete"
+      - name: Restart and wait for healthy
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -e ssh vps bash -s <<'REMOTE'
+          set -e
+          cd ${{ env.DEPLOY_DIR }}
+          TAG=sha-${{ github.sha }}
+          touch .env
+          grep -q '^IMAGE_TAG=' .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$TAG/" .env || echo "IMAGE_TAG=$TAG" >> .env
+          docker compose up -d --remove-orphans
+          for i in $(seq 1 30); do
+            s=$(docker compose ps -q app | xargs docker inspect -f '{{.State.Health.Status}}' 2>/dev/null || echo starting)
+            if [ "$s" = "healthy" ]; then
+              echo healthy
+              # keep the 3 newest images for rollback, drop the rest
+              docker images docuseal --format '{{.CreatedAt}}|{{.Repository}}:{{.Tag}}' | sort -r | tail -n +4 | cut -d'|' -f2 | xargs -r docker rmi || true
+              exit 0
+            fi
+            sleep 5
+          done
+          docker compose logs --tail=100 app
+          echo "app did not become healthy"; exit 1
+          REMOTE

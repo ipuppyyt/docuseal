@@ -1,12 +1,60 @@
 services:
   app:
-    image: ghcr.io/ipuppyyt/docuseal:latest
+    image: docuseal:${IMAGE_TAG:-latest}
+    pull_policy: never
     restart: unless-stopped
-    ports:
-      - "3001:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
     volumes:
-      - ./storage:/data/docuseal
+      - ./data/docuseal:/data/docuseal
     environment:
-      - RAILS_ENV=production
-      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-      - RAILS_LOG_TO_STDOUT=true
+      RAILS_ENV: production
+      RAILS_LOG_TO_STDOUT: "true"
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      DATABASE_URL: postgresql://docuseal:${POSTGRES_PASSWORD}@postgres:5432/docuseal
+      # TLS is terminated by Caddy; this makes Rails treat requests as https
+      FORCE_SSL: ${HOST}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    volumes:
+      - ./data/postgres:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: docuseal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: docuseal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docuseal -d docuseal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      HOST: ${HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
