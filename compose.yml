@@ -41,6 +41,7 @@ services:
 
   caddy:
     image: caddy:2
+    container_name: caddy
     restart: unless-stopped
     depends_on:
       - app
@@ -54,7 +55,17 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      # extra sites from other apps on this VPS (e.g. elevateaura)
+      - /root/caddy/conf.d:/etc/caddy/conf.d:ro
+    networks:
+      - default
+      - proxy
 
 volumes:
   caddy_data:
   caddy_config:
+
+networks:
+  # shared with other stacks on the VPS; created once: docker network create proxy
+  proxy:
+    external: true
