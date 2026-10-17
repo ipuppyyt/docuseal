@@ -1,6 +1,3 @@
-# Sites from other apps on this VPS
-import /etc/caddy/conf.d/*.caddy
-
 {$HOST} {
 	encode zstd gzip
 	request_body {

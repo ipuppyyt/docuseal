@@ -69,8 +69,6 @@ jobs:
           cd ${{ env.DEPLOY_DIR }}
           TAG=sha-${{ github.sha }}
           touch .env
-          docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
-          mkdir -p /root/caddy/conf.d
           grep -q '^IMAGE_TAG=' .env && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$TAG/" .env || echo "IMAGE_TAG=$TAG" >> .env
           docker compose up -d --remove-orphans
           for i in $(seq 1 30); do
