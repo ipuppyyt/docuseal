@@ -1,4 +1,15 @@
 services:
+  # Outbound-only tunnel to Cloudflare: no ports are published on the host.
+  # In the Cloudflare tunnel, point your domain at http://app:3000
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN must be set in .env}
+    depends_on:
+      - app
+
   app:
     image: docuseal:${IMAGE_TAG:-latest}
     pull_policy: never
@@ -15,7 +26,7 @@ services:
       RAILS_LOG_TO_STDOUT: "true"
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       DATABASE_URL: postgresql://docuseal:${POSTGRES_PASSWORD}@postgres:5432/docuseal
-      # TLS is terminated by Caddy; this makes Rails treat requests as https
+      # TLS is terminated by Cloudflare; this makes Rails treat requests as https
       FORCE_SSL: ${HOST}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/up >/dev/null || exit 1"]
@@ -38,23 +49,3 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    depends_on:
-      - app
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    environment:
-      HOST: ${HOST}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-
-volumes:
-  caddy_data:
-  caddy_config:

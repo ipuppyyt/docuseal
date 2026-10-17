@@ -47,12 +47,12 @@ jobs:
             PubkeyAuthentication no
           CFG
 
-      - name: Copy compose and Caddy config
+      - name: Copy compose file
         env:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
           sshpass -e ssh vps "mkdir -p ${{ env.DEPLOY_DIR }}"
-          sshpass -e scp compose.yml Caddyfile vps:${{ env.DEPLOY_DIR }}/
+          sshpass -e scp compose.yml vps:${{ env.DEPLOY_DIR }}/
 
       - name: Stream image to server
         env:
